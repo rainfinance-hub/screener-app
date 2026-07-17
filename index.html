@@ -80,6 +80,8 @@ body{background:var(--bg);color:var(--txt);font-family:'Inter',-apple-system,'Pi
 
 /* LOG */
 .log-strip{background:var(--bg);border-top:1px solid var(--b);flex-shrink:0;display:flex;flex-direction:column;overflow:hidden}
+.hist-row{display:grid;grid-template-columns:1.4fr .7fr .8fr .8fr 1fr .8fr .7fr 1.3fr;gap:8px;padding:10px 16px;border-bottom:1px solid var(--b);font-size:12px;align-items:center}
+.hrc-qty-inline{display:none} /* 桌面上数量已经有独立一列，这个内嵌在代码旁边的只在手机卡片布局里显示 */
 .settings-exp{display:block}
 .settings-col{display:none}
 .log-strip.exp{height:160px}.log-strip.col{height:28px}
@@ -95,7 +97,7 @@ body{background:var(--bg);color:var(--txt);font-family:'Inter',-apple-system,'Pi
 .ll.info{color:var(--cyan)}.ll.ok{color:var(--green)}.ll.warn{color:var(--amber)}.ll.err{color:var(--red)}
 
 /* FULL */
-.full{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
+.full{flex:1;overflow-y:auto;overflow-x:hidden;padding:14px;display:flex;flex-direction:column;gap:10px}
 
 /* COMMON */
 .card{background:var(--card);border:1px solid var(--b);border-radius:var(--r2);padding:14px 16px;box-shadow:var(--shadow);line-height:1.5}
@@ -214,6 +216,8 @@ textarea{resize:vertical;font-family:'SF Mono',Consolas,monospace;font-size:11px
   .right{width:100%;border-left:none;border-top:1px solid var(--b)}
   /* Log 折叠 */
   .log-strip.exp{height:120px}
+  /* 底部图例栏：手机上常驻占用宝贵的竖向空间，卡片视图本来就用文字标注不靠颜色记忆，隐藏掉腾地方 */
+  .legend{display:none}
   /* 扫描按钮全宽 */
   .scan-big{width:100%;justify-content:center}
   /* 结果：隐藏完整表格，用卡片 */
@@ -244,12 +248,20 @@ textarea{resize:vertical;font-family:'SF Mono',Consolas,monospace;font-size:11px
   .fb{padding:4px 9px;font-size:11px}
   /* Risk table 横向滚动 */
   #page-risk .card{overflow-x:auto}
+  /* 风控页头部：标题+说明文字 原来是一行flex，手机上说明文字被挤到几乎没有宽度，
+     一个字一行地纵向堆叠——改成整体纵向排列，说明文字给足宽度正常换行 */
+  #page-risk .full>div:first-child{flex-direction:column;align-items:stretch!important;gap:8px!important}
+  #page-risk .full>div:first-child>div:first-child{width:100%}
+  #page-risk .full>div:first-child>div:last-child{margin-left:0!important;flex-wrap:wrap}
+  /* 风控参数：7列硬挤在手机屏幕上看不清，改2列 */
+  #page-risk .card[style*="grid-template-columns:repeat(7"]{overflow-x:visible}
+  #page-risk div[style*="grid-template-columns:repeat(7,1fr)"]{grid-template-columns:1fr 1fr!important}
   /* WL 单列 */
   #page-wl .full>div{grid-template-columns:1fr}
 
   /* 自选股/持仓股 手机卡片化：用grid-template-areas重排现有格子，不复制任何标记/ID，
      异步价格更新逻辑（按ID查找）完全不受影响 */
-  .wl-thead,.pt-thead{display:none}
+  .wl-thead,.pt-thead{display:none!important}
   .wl-row2,.pt-row{
     display:grid!important;
     grid-template-columns:1fr 1fr;
@@ -294,6 +306,36 @@ textarea{resize:vertical;font-family:'SF Mono',Consolas,monospace;font-size:11px
   .wlc-actions>div,.ptc-actions>div{flex:1}
   .ptc-pnl{grid-area:pnl}
   .ptc-mv{grid-area:mv}
+  /* 专业仪表盘：4列在手机上挤成一团看不清，改2列 */
+  #dashboard-cards{grid-template-columns:1fr 1fr!important}
+  /* 历史交易表格：手机上改卡片布局，见下方.hist-row定义 */
+  .hist-row{
+    display:grid!important;
+    grid-template-columns:1fr 1fr!important;
+    grid-template-areas:
+      "sym    sym"
+      "buy    sell"
+      "pnl    pct"
+      "days   dates"!important;
+    gap:6px 10px;
+    padding:12px 14px;
+    margin-bottom:6px;
+    border-radius:var(--r2);
+    border:1px solid var(--b2);
+  }
+  .hrc-sym{grid-area:sym}
+  .hrc-qty-inline{display:inline}
+  .hrc-qty{display:none} /* 数量并进代码那一格显示，手机上单独一行太挤 */
+  .hrc-buy{grid-area:buy}
+  .hrc-buy::before{content:"买入 ";color:var(--muted);font-size:10px}
+  .hrc-sell{grid-area:sell}
+  .hrc-sell::before{content:"卖出 ";color:var(--muted);font-size:10px}
+  .hrc-pnl{grid-area:pnl}
+  .hrc-pnl::before{content:"盈亏 ";color:var(--muted);font-size:10px;font-weight:400}
+  .hrc-pct{grid-area:pct}
+  .hrc-days{grid-area:days}
+  .hrc-days::before{content:"持仓 ";color:var(--muted);font-size:10px}
+  .hrc-dates{grid-area:dates;font-size:10px!important}
 }
 
 @media(min-width:768px)and(max-width:1023px){
@@ -2608,6 +2650,7 @@ function weeklyAdjust(wcTrend, score){
 // 不受用户当前自定义扫描池影响，避免"扫了什么算什么"导致代表性不足
 // ══════════════════════════════════════════════
 let dashboardData=null;
+let ptTotalPnlRaw=0; // 持仓总盈亏的原始数字（未格式化），供历史交易页面直接读取，避免正则解析格式化文字出错
 async function scanDashboard(auto){
   if(scanning){log('⚠ 常规扫描进行中，请等扫描完成后再刷新仪表盘','warn');return;}
   // 自动触发（开局刷新）时，如果5分钟内已经刷新过，就不重复跑——避免频繁刷新页面时反复打一轮130只的独立扫描
@@ -4138,6 +4181,7 @@ function renderPT(force=false){
         // 总览更新
         if(loadedCount===portfolio.length){
           const totalPnl=totalMV-totalCost;
+          ptTotalPnlRaw=totalPnl;
           const totalPct=totalCost>0?(totalPnl/totalCost*100):0;
           const tv=document.getElementById('pt-total-val');
           const tp=document.getElementById('pt-total-pnl');
@@ -5671,10 +5715,11 @@ function renderHistory(){
   if(q)data=data.filter(t=>t.sym.toUpperCase().includes(q));
   data.sort((a,b)=>dateSortVal(b.sellDate)-dateSortVal(a.sellDate));
 
-  // 顶部四个总览卡片：持仓市值/未实现盈亏直接引用持仓股页面已经算好的数字，不重复计算
+  // 顶部四个总览卡片：持仓市值直接引用持仓股页面已经算好的文字；未实现盈亏用原始数字（不再用正则去抠格式化文字，
+  // 之前"-$7031"这种格式会把负号跟数字隔开，正则解析会丢符号，导致"综合盈亏"算出来正负号是反的）
   const posVal=document.getElementById('pt-total-val')?.textContent||'—';
-  const unrealTxt=document.getElementById('pt-total-pnl')?.textContent||'—';
-  const unrealNum=parseFloat((unrealTxt.match(/-?[\d.]+/)||[0])[0])||0;
+  const unrealNum=ptTotalPnlRaw||0;
+  const unrealTxt=`${unrealNum>=0?'+':'-'}$${Math.abs(unrealNum).toFixed(2)}`;
   const realizedNum=tradeHistory.reduce((s,t)=>s+(t.realizedPnl||0),0);
   const totalNum=unrealNum+realizedNum;
   const setCard=(id,val,num)=>{const e=document.getElementById(id);if(!e)return;e.textContent=val;e.style.color=num>0?'var(--green)':num<0?'var(--red)':'var(--muted)';};
@@ -5694,18 +5739,18 @@ function renderHistory(){
   el.innerHTML=data.map(t=>{
     const pnlColor=t.realizedPnl>=0?'var(--green)':'var(--red)';
     const tagsStr=(t.tags||[]).length?`<div style="font-size:10px;color:var(--muted)">${t.tags.join(', ')}</div>`:'';
-    return `<div style="display:grid;grid-template-columns:1.4fr .7fr .8fr .8fr 1fr .8fr .7fr 1.3fr;gap:8px;padding:10px 16px;border-bottom:1px solid var(--b);font-size:12px;align-items:center">
-      <div>
-        <b>${t.sym}</b>${t.isPartial?' <span style="font-size:9px;color:var(--amber);background:var(--adim);padding:1px 5px;border-radius:4px">部分</span>':''}
+    return `<div class="hist-row">
+      <div class="hrc-sym">
+        <b>${t.sym}</b> <span class="hrc-qty-inline" style="color:var(--muted);font-size:11px">${t.qty}股</span>${t.isPartial?' <span style="font-size:9px;color:var(--amber);background:var(--adim);padding:1px 5px;border-radius:4px">部分</span>':''}
         ${t.note?`<div style="font-size:10px;color:var(--muted)">${t.note}</div>`:''}${tagsStr}
       </div>
-      <div>${t.qty}</div>
-      <div>$${(+t.buyPrice).toFixed(2)}</div>
-      <div>$${(+t.sellPrice).toFixed(2)}</div>
-      <div style="color:${pnlColor};font-weight:700">${t.realizedPnl>=0?'+':'-'}$${Math.abs(t.realizedPnl).toFixed(2)}</div>
-      <div style="color:${pnlColor}">${t.pnlPct>=0?'+':''}${t.pnlPct.toFixed(2)}%</div>
-      <div>${t.holdDays}天</div>
-      <div style="font-size:11px;color:var(--muted)">${fmtDateShort(t.buyDate)} → ${fmtDateShort(t.sellDate)}</div>
+      <div class="hrc-qty">${t.qty}</div>
+      <div class="hrc-buy">$${(+t.buyPrice).toFixed(2)}</div>
+      <div class="hrc-sell">$${(+t.sellPrice).toFixed(2)}</div>
+      <div class="hrc-pnl" style="color:${pnlColor};font-weight:700">${t.realizedPnl>=0?'+':'-'}$${Math.abs(t.realizedPnl).toFixed(2)}</div>
+      <div class="hrc-pct" style="color:${pnlColor}">${t.pnlPct>=0?'+':''}${t.pnlPct.toFixed(2)}%</div>
+      <div class="hrc-days">${t.holdDays}天</div>
+      <div class="hrc-dates" style="font-size:11px;color:var(--muted)">${fmtDateShort(t.buyDate)} → ${fmtDateShort(t.sellDate)}</div>
     </div>`;
   }).join('');
 }
