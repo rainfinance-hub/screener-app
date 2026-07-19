@@ -3260,6 +3260,15 @@ async function pushOrderSheet(){
     log('⚠ 请先在「扫描参数」页勾选并配置 Telegram 或 Discord','warn');
     return;
   }
+  // 诊断：只有一边通的时候，明确说清楚另一边为什么没发，而不是默默跳过
+  if(!hasDC&&(cfg.dcOn||cfg.dcWebhook)){
+    if(!cfg.dcOn)log('ℹ️ Discord未推送：开关没打开（在扫描参数页推送配置区勾选"启用Discord"）','warn');
+    else if(!cfg.dcWebhook)log('ℹ️ Discord未推送：Webhook URL是空的，需要先填写并点保存','warn');
+  }
+  if(!hasTG&&(cfg.tgOn||cfg.tgToken||cfg.tgChat)){
+    if(!cfg.tgOn)log('ℹ️ Telegram未推送：开关没打开','warn');
+    else log('ℹ️ Telegram未推送：Bot Token或Chat ID没填全','warn');
+  }
   const selected=riskItems.filter(r=>r.selected!==false&&r.shares>0);
   if(!selected.length){log('⚠ 没有勾选且有仓位的股票可推送','warn');return;}
 
@@ -3421,11 +3430,12 @@ function exportOrderCSV(){
 
 // ── RISK ──
 function batchRiskBuy(){
-  // 送入「买进信号（score≥1）且无卖出信号」的股票
-  const buySignals=results.filter(Boolean).filter(r=>r.score>0&&!r.sell?.hit);
-  if(!buySignals.length){log('🛡 无符合条件的买进信号股票','warn');return;}
+  // 送入"买进信号且无卖出信号"的股票，阈值读「最少通过条件数」下拉框（之前这个下拉框是摆设，没有接到任何逻辑上）
+  const minSig=parseInt(document.getElementById('min-sig')?.value)||1;
+  const buySignals=results.filter(Boolean).filter(r=>r.score>=minSig&&!r.sell?.hit);
+  if(!buySignals.length){log(`🛡 无符合条件的买进信号股票（阈值≥${minSig}/4）`,'warn');return;}
   buySignals.forEach(r=>oneRisk(r.sym,r.price??0,r.atr??0));
-  log(`🛡 已送入风控 ${buySignals.length} 只买进信号股票`,'ok');
+  log(`🛡 已送入风控 ${buySignals.length} 只买进信号股票（阈值≥${minSig}/4）`,'ok');
   go('risk');
   calcRisk();
 }
@@ -5374,9 +5384,10 @@ function mergeDuplicatePositions(){
   const previewHtml=dupGroups.map(([sym,arr])=>{
     const totalQty=arr.reduce((s,p)=>s+(parseFloat(p.qty)||0),0);
     const avgCost=totalQty>0?arr.reduce((s,p)=>s+(parseFloat(p.qty)||0)*(parseFloat(p.cost)||0),0)/totalQty:0;
-    return `<div style="margin-bottom:6px;padding:7px 10px;background:var(--dim);border-radius:var(--r);font-size:11px">
-      <b style="color:var(--txt)">${sym}</b>：${arr.length}笔（共${totalQty}股）→ 合并为 1笔 · 均价 $${avgCost.toFixed(2)}
-    </div>`;
+    return `<label style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:7px 10px;background:var(--dim);border-radius:var(--r);font-size:11px;cursor:pointer">
+      <input type="checkbox" class="merge-sym-cb" value="${sym}" checked style="width:auto;flex-shrink:0">
+      <span><b style="color:var(--txt)">${sym}</b>：${arr.length}笔（共${totalQty}股）→ 合并为 1笔 · 均价 $${avgCost.toFixed(2)}</span>
+    </label>`;
   }).join('');
 
   const overlay=document.createElement('div');
@@ -5394,12 +5405,20 @@ function mergeDuplicatePositions(){
     </div>`;
   document.body.appendChild(overlay);
   overlay.querySelector('#merge-ok').onclick=()=>{
+    // 只合并勾选了的股票，没勾的那组保持原样、分笔不动
+    const checkedSyms=new Set([...overlay.querySelectorAll('.merge-sym-cb:checked')].map(cb=>cb.value));
     overlay.remove();
+    if(!checkedSyms.size){log('🔗 没有勾选任何股票，未做任何合并','info');return;}
     const merged=[];
-    let totalBefore=0;
+    let totalBefore=0,mergedCount=0;
     Object.entries(groups).forEach(([sym,arr])=>{
       totalBefore+=arr.length;
-      if(arr.length===1){merged.push(arr[0]);return;}
+      if(arr.length===1||!checkedSyms.has(sym)){
+        // 单笔持仓，或者这组没被勾选合并——原样保留，不动
+        merged.push(...arr);
+        return;
+      }
+      mergedCount++;
       const totalQty=arr.reduce((s,p)=>s+(parseFloat(p.qty)||0),0);
       const avgCost=totalQty>0?arr.reduce((s,p)=>s+(parseFloat(p.qty)||0)*(parseFloat(p.cost)||0),0)/totalQty:0;
       const dates=arr.map(p=>p.date).filter(Boolean).sort((a,b)=>dateSortVal(a)-dateSortVal(b));
@@ -5419,7 +5438,7 @@ function mergeDuplicatePositions(){
     portfolio.length=0;
     portfolio.push(...merged);
     savePT();renderPT();
-    log(`🔗 已合并 ${dupGroups.length} 组重复持仓（${totalBefore}笔 → ${merged.length}只，止损/目标已按新成本价等比例重算）`,'ok');
+    log(`🔗 已合并 ${mergedCount} 组重复持仓（共${totalBefore}笔 → ${merged.length}只，止损/目标已按新成本价等比例重算；未勾选的组保持原样）`,'ok');
   };
   overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
 }
@@ -5441,6 +5460,11 @@ function ptSellDialog(i){
       <div style="display:flex;flex-direction:column;gap:3px;margin-bottom:18px">
         <label style="font-size:9px;color:var(--muted);font-weight:700;letter-spacing:.3px">卖出价 Sell Price</label>
         <input type="number" id="pt-sell-price" value="${curPrice}" placeholder="留空则用最新现价"
+          style="width:100%;padding:8px 10px;font-size:12px;box-sizing:border-box">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:3px;margin-bottom:18px">
+        <label style="font-size:9px;color:var(--muted);font-weight:700;letter-spacing:.3px">卖出日期 Sell Date（补记过去的交易可以改这里）</label>
+        <input type="date" id="pt-sell-date" value="${todayISO()}"
           style="width:100%;padding:8px 10px;font-size:12px;box-sizing:border-box">
       </div>
       <div style="display:flex;gap:8px">
@@ -5466,7 +5490,7 @@ function confirmPTSell(i){
   const pnlPct=cost>0?((sellPrice-cost)/cost*100):0;
   const pnlStr=`${realizedPnl>=0?'+':'-'}$${Math.abs(realizedPnl).toFixed(0)} (${pnlPct>=0?'+':''}${pnlPct.toFixed(2)}%)`;
   const isPartial=qtySold<p.qty;
-  const sellDate=todayISO();
+  const sellDate=document.getElementById('pt-sell-date')?.value||todayISO();
   const holdDays=(()=>{
     const bd=new Date(p.date||sellDate),sd=new Date(sellDate);
     return Math.max(0,Math.round((sd-bd)/86400000));
@@ -5711,7 +5735,7 @@ function renderHistory(){
   const el=document.getElementById('hist-list');
   if(!el)return;
   const q=(document.getElementById('hist-search')?.value||'').trim().toUpperCase();
-  let data=[...tradeHistory];
+  let data=tradeHistory.map((t,i)=>({...t,_idx:i}));
   if(q)data=data.filter(t=>t.sym.toUpperCase().includes(q));
   data.sort((a,b)=>dateSortVal(b.sellDate)-dateSortVal(a.sellDate));
 
@@ -5750,9 +5774,57 @@ function renderHistory(){
       <div class="hrc-pnl" style="color:${pnlColor};font-weight:700">${t.realizedPnl>=0?'+':'-'}$${Math.abs(t.realizedPnl).toFixed(2)}</div>
       <div class="hrc-pct" style="color:${pnlColor}">${t.pnlPct>=0?'+':''}${t.pnlPct.toFixed(2)}%</div>
       <div class="hrc-days">${t.holdDays}天</div>
-      <div class="hrc-dates" style="font-size:11px;color:var(--muted)">${fmtDateShort(t.buyDate)} → ${fmtDateShort(t.sellDate)}</div>
+      <div class="hrc-dates" style="font-size:11px;color:var(--muted)">${fmtDateShort(t.buyDate)} → ${fmtDateShort(t.sellDate)} <span style="color:var(--cyan);cursor:pointer" onclick="editHistoryEntry(${t._idx})" title="编辑这条记录（卖出价/卖出日期/备注）">✎</span></div>
     </div>`;
   }).join('');
+}
+function editHistoryEntry(idx){
+  const t=tradeHistory[idx];
+  if(!t)return;
+  const html=`<div id="hist-edit-overlay" onclick="if(event.target.id==='hist-edit-overlay')closeHistoryEdit()"
+    style="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(3px)">
+    <div style="background:var(--card);border:1px solid var(--b2);border-radius:14px;padding:22px;width:min(340px,92vw);box-shadow:0 8px 40px rgba(0,0,0,.6)">
+      <div style="font-size:14px;font-weight:800;margin-bottom:16px">✎ 编辑交易记录 ${t.sym}</div>
+      <div style="display:flex;flex-direction:column;gap:3px;margin-bottom:12px">
+        <label style="font-size:9px;color:var(--muted);font-weight:700;letter-spacing:.3px">卖出价 Sell Price</label>
+        <input type="number" id="hist-edit-price" value="${t.sellPrice}" style="width:100%;padding:8px 10px;font-size:12px;box-sizing:border-box">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:3px;margin-bottom:12px">
+        <label style="font-size:9px;color:var(--muted);font-weight:700;letter-spacing:.3px">卖出日期 Sell Date</label>
+        <input type="date" id="hist-edit-date" value="${t.sellDate}" style="width:100%;padding:8px 10px;font-size:12px;box-sizing:border-box">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:3px;margin-bottom:18px">
+        <label style="font-size:9px;color:var(--muted);font-weight:700;letter-spacing:.3px">备注 Note</label>
+        <input type="text" id="hist-edit-note" value="${t.note||''}" style="width:100%;padding:8px 10px;font-size:12px;box-sizing:border-box">
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="saveHistoryEdit(${idx})" class="btn bc" style="flex:1;font-size:12px;font-weight:700">💾 保存</button>
+        <button onclick="closeHistoryEdit()" class="btn" style="font-size:12px;background:var(--card2);border:1px solid var(--b2);color:var(--muted)">取消</button>
+      </div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML('beforeend',html);
+  setTimeout(()=>document.getElementById('hist-edit-price')?.focus(),100);
+}
+function closeHistoryEdit(){document.getElementById('hist-edit-overlay')?.remove();}
+function saveHistoryEdit(idx){
+  const t=tradeHistory[idx];
+  if(!t)return;
+  const newPrice=parseFloat(document.getElementById('hist-edit-price').value)||t.sellPrice;
+  const newDate=document.getElementById('hist-edit-date').value||t.sellDate;
+  const newNote=document.getElementById('hist-edit-note').value;
+  // 卖出价/日期改了，已实现盈亏/盈亏%/持仓天数要跟着重算，不能留着旧数字
+  t.sellPrice=newPrice;
+  t.sellDate=newDate;
+  t.note=newNote;
+  t.realizedPnl=+((newPrice-t.buyPrice)*t.qty).toFixed(2);
+  t.pnlPct=t.buyPrice>0?+((newPrice-t.buyPrice)/t.buyPrice*100).toFixed(2):0;
+  const bd=new Date(t.buyDate||newDate),sd=new Date(newDate);
+  t.holdDays=Math.max(0,Math.round((sd-bd)/86400000));
+  saveTradeHistory();
+  closeHistoryEdit();
+  renderHistory();
+  log(`📜 已更新 ${t.sym} 的交易记录`,'ok');
 }
 function exportHistoryCSV(){
   if(!tradeHistory.length){log('⚠ 历史交易记录为空','warn');return;}
