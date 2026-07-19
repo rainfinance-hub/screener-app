@@ -71,12 +71,21 @@ body{background:var(--bg);color:var(--txt);font-family:'Inter',-apple-system,'Pi
 /* SCAN */
 .scan-wrap{display:flex;flex-direction:column;width:100%;height:100%;overflow:hidden}
 .scan-row{display:flex;flex:1;overflow:hidden;min-height:0}
-.left{width:285px;flex-shrink:0;border-right:1px solid var(--b);display:flex;flex-direction:column;overflow:hidden;background:var(--surf)}
+.left{width:370px;flex-shrink:0;border-right:1px solid var(--b);display:flex;flex-direction:column;overflow:hidden;background:var(--surf)}
 .left-body{flex:1;overflow-y:auto;padding:10px 12px}
 .left-foot{padding:8px 12px;border-top:1px solid var(--b);flex-shrink:0}
 .mid{flex:1;display:flex;flex-direction:column;overflow:hidden}
 .params-area{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:10px}
 .right{width:265px;flex-shrink:0;border-left:1px solid var(--b);overflow-y:auto;padding:12px 14px;background:var(--surf);display:flex;flex-direction:column;gap:12px}
+.right-col-a,.right-col-b{display:flex;flex-direction:column;gap:12px}
+/* 窗口够宽时（≥1400px），推送配置挪到自动驾驶右边并排显示，省纵向滚动；
+   窗口窄的话保持纵向堆叠不变，避免挤压中间的扫描池/扫描按钮区域 */
+@media(min-width:1400px){
+  .right{width:550px;flex-direction:row}
+  .right-col-a,.right-col-b{flex:1;min-width:0}
+  .push-cfg-card,.autodrive-card{flex:1;display:flex;flex-direction:column}
+  .push-cfg-footer,.autodrive-footer{margin-top:auto;padding-top:12px}
+}
 
 /* LOG */
 .log-strip{background:var(--bg);border-top:1px solid var(--b);flex-shrink:0;display:flex;flex-direction:column;overflow:hidden;position:fixed;bottom:0;left:0;right:0;z-index:25}
@@ -752,9 +761,6 @@ CRWD PLTR MSTR COIN SMCI IONQ RKLB LUNR</textarea>
           <div class="fg"><label>K线周期</label>
             <select id="tf"><option value="1Day">日线 1D</option><option value="1Week">周线 1W</option></select>
           </div>
-          <div class="fg"><label>最少通过条件数</label>
-            <select id="min-sig"><option value="1">1/4</option><option value="2">2/4</option><option value="3" selected>3/4（严格）</option><option value="4">4/4（神级）</option></select>
-          </div>
           <div class="fg"><label>回调K线根数</label>
             <select id="bars"><option value="200">200根</option><option value="500" selected>500根（推荐）</option><option value="1000">1000根</option></select>
           </div>
@@ -815,6 +821,7 @@ CRWD PLTR MSTR COIN SMCI IONQ RKLB LUNR</textarea>
 
   <!-- RIGHT -->
   <div class="right">
+    <div class="right-col-a">
     <div class="card">
       <div class="ctitle">📅 历史检查日期</div>
       <div class="fg" style="margin-bottom:7px"><label>历史日期（空=今日）</label><input type="date" id="hist-date" placeholder="留空=今日"></div>
@@ -827,7 +834,7 @@ CRWD PLTR MSTR COIN SMCI IONQ RKLB LUNR</textarea>
         <button class="dp"    onclick="setDate('6m',this)">6月前</button>
       </div>
     </div>
-    <div class="card">
+    <div class="card autodrive-card">
       <div class="ctitle">🤖 盘后自动驾驶 <span class="autopilot-dot" id="ap-dot"></span></div>
       <div class="fg" style="margin-bottom:7px">
         <label>自动扫描时间（ET，可多选）<span style="color:var(--cyan);font-weight:400">推荐⭐15:45 + 16:05</span></label>
@@ -864,7 +871,7 @@ CRWD PLTR MSTR COIN SMCI IONQ RKLB LUNR</textarea>
           <option value="silent">静默（只更新结果）</option>
         </select>
       </div>
-      <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px">
+      <div class="autodrive-footer" style="display:flex;gap:6px;align-items:center;margin-bottom:8px">
         <button class="btn ba" id="rem-btn" onclick="toggleRem()" style="flex:1;justify-content:center">🤖 开启自动驾驶</button>
         <button class="btn bg" onclick="stopRem()" title="停止">■</button>
       </div>
@@ -872,9 +879,11 @@ CRWD PLTR MSTR COIN SMCI IONQ RKLB LUNR</textarea>
         未启动 · 下次扫描：—
       </div>
     </div>
+    </div><!-- /right-col-a -->
 
+    <div class="right-col-b">
     <!-- ══ 推送配置 ══ -->
-    <div class="card">
+    <div class="card push-cfg-card">
       <div class="ctitle">🔔 推送配置 <span style="font-size:9px;font-weight:400;color:var(--muted);text-transform:none">（默认仅推送有信号的股票）</span></div>
 
       <!-- Telegram -->
@@ -921,12 +930,13 @@ CRWD PLTR MSTR COIN SMCI IONQ RKLB LUNR</textarea>
         </label>
       </div>
 
-      <div style="display:flex;gap:6px">
+      <div class="push-cfg-footer" style="display:flex;gap:6px">
         <button class="btn bg" onclick="savePushConfig()" style="flex:1;justify-content:center">💾 保存配置</button>
         <button class="btn bg" onclick="testPush()" style="flex:1;justify-content:center">📤 测试推送</button>
       </div>
       <div id="push-status" style="font-size:10px;color:var(--muted);margin-top:6px;text-align:center">未配置</div>
     </div>
+    </div><!-- /right-col-b -->
   </div>
   </div><!-- /scan-row -->
 
@@ -1030,7 +1040,7 @@ CRWD PLTR MSTR COIN SMCI IONQ RKLB LUNR</textarea>
       <option value="sym_z">代码 Z-A</option>
     </select>
   </div>
-  <div class="card" style="padding:0;flex:1;min-height:0;display:flex;flex-direction:column">
+  <div class="card" id="res-table-card" style="padding:0;flex:1;min-height:0;display:flex;flex-direction:column">
     <div class="thead" id="res-thead" style="flex-shrink:0">
   <div class="th-sortable" onclick="thSort('sym')">代码 <span class="th-arr" id="th-sym"></span></div>
   <div class="th-sortable" onclick="thSort('price')">现价 <span class="th-arr" id="th-price"></span></div>
@@ -3430,12 +3440,28 @@ function exportOrderCSV(){
 
 // ── RISK ──
 function batchRiskBuy(){
-  // 送入"买进信号且无卖出信号"的股票，阈值读「最少通过条件数」下拉框（之前这个下拉框是摆设，没有接到任何逻辑上）
-  const minSig=parseInt(document.getElementById('min-sig')?.value)||1;
-  const buySignals=results.filter(Boolean).filter(r=>r.score>=minSig&&!r.sell?.hit);
-  if(!buySignals.length){log(`🛡 无符合条件的买进信号股票（阈值≥${minSig}/4）`,'warn');return;}
-  buySignals.forEach(r=>oneRisk(r.sym,r.price??0,r.atr??0));
-  log(`🛡 已送入风控 ${buySignals.length} 只买进信号股票（阈值≥${minSig}/4）`,'ok');
+  // 送入"当前结果页筛选栏选中的那个筛选条件"匹配到的股票——
+  // 复用renderRes()里同一套筛选逻辑，跟你在结果页点的筛选按钮（全部/四维共振/.../买进信号/卖出信号）保持完全一致，
+  // 不再用一个脱节的"最少通过条件数"下拉框（之前那个跟筛选按钮是两套独立逻辑，容易让人以为筛选按钮没用）
+  const f=activeFilter;
+  let data=results.filter(Boolean);
+  if(f===4)data=data.filter(r=>r.score===4);
+  else if(f===3)data=data.filter(r=>r.score===3);
+  else if(f===2)data=data.filter(r=>r.score===2);
+  else if(f==='s1')data=data.filter(r=>r.r1?.hit);
+  else if(f==='s2')data=data.filter(r=>r.r2?.hit);
+  else if(f==='s3')data=data.filter(r=>r.r3?.hit);
+  else if(f==='s4')data=data.filter(r=>r.r4?.hit);
+  else if(f==='sell')data=data.filter(r=>r.sell?.hit);
+  else if(f==='buy')data=data.filter(r=>r.score>0);
+  else data=data.filter(r=>r.score>=0); // 'all'：跟结果页一致，排除被周线过滤的(-1)
+
+  const filterLabel={4:'🔥四维共振',3:'🟠三维共振',2:'🟢二维共振',s1:'①织带买进',s2:'②维加斯确认',
+    s3:'③顾比翻多',s4:'④Squeeze释放',buy:'🟢买进信号',sell:'🔴卖出信号',all:'全部'}[f]||'全部';
+
+  if(!data.length){log(`🛡 当前筛选（${filterLabel}）下没有符合条件的股票`,'warn');return;}
+  data.forEach(r=>oneRisk(r.sym,r.price??0,r.atr??0));
+  log(`🛡 已按当前筛选（${filterLabel}）送入风控 ${data.length} 只股票`,'ok');
   go('risk');
   calcRisk();
 }
@@ -4311,8 +4337,9 @@ async function exportImg(){
         document.head.appendChild(s);
       });
     }
-    // 截取 tbody + 表头
-    const target=document.querySelector('#page-res .card');
+    // 截取 tbody + 表头（用专属ID而不是.card类选择器——这个页面里"专业仪表盘"卡片也是.card，
+    // 且在DOM里排在结果表格前面，之前用querySelector('.card')会先抓到仪表盘，截出来的图完全是错的）
+    const target=document.getElementById('res-table-card');
     const canvas=await window.html2canvas(target,{
       backgroundColor:isDark?'#141720':'#ffffff',
       scale:2,  // 高清2x
