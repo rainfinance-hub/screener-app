@@ -304,7 +304,8 @@ textarea{resize:vertical;font-family:'SF Mono',Consolas,monospace;font-size:11px
   .wlc-sym,.ptc-sym{grid-area:sym}
   .wlc-date,.ptc-date{grid-area:date}
   .wlc-price,.ptc-price{grid-area:price}
-  .wlc-chg{grid-area:chg}
+  .wlc-chg{grid-area:chg;justify-content:flex-end!important;text-align:right}
+  .ptc-pnl{grid-area:pnl;text-align:right}
   .wlc-score,.ptc-score{grid-area:score}
   .wlc-quality{grid-area:quality}
   .wlc-mom{grid-area:mom}
@@ -313,7 +314,6 @@ textarea{resize:vertical;font-family:'SF Mono',Consolas,monospace;font-size:11px
   .wlc-sltp,.ptc-sltp{grid-area:sltp}
   .wlc-actions,.ptc-actions{grid-area:actions;flex-direction:row!important;min-width:0!important;width:100%}
   .wlc-actions>*,.ptc-actions>*{flex:1}
-  .ptc-pnl{grid-area:pnl}
   .ptc-mv{grid-area:mv}
   /* 专业仪表盘：4列在手机上挤成一团看不清，改2列 */
   #dashboard-cards{grid-template-columns:1fr 1fr!important}
