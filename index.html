@@ -266,6 +266,15 @@ textarea{resize:vertical;font-family:'SF Mono',Consolas,monospace;font-size:11px
   /* 风控参数：7列硬挤在手机屏幕上看不清，改2列 */
   #page-risk .card[style*="grid-template-columns:repeat(7"]{overflow-x:visible}
   #page-risk div[style*="grid-template-columns:repeat(7,1fr)"]{grid-template-columns:1fr 1fr!important}
+  /* 风控表格：手机上彻底转成卡片，不再依赖横向滑动（跟整页纵向滚动的触摸手势容易打架，
+     试了两轮CSS横向滚动都不跟手，改成跟自选股/持仓股一样的卡片方案更可靠） */
+  .rt{min-width:0!important;width:100%}
+  .rt thead{display:none}
+  .rt tbody tr{display:block;border:1px solid var(--b2);border-radius:var(--r2);margin-bottom:8px;padding:10px 12px;background:var(--card)}
+  .rt tbody tr td{display:flex;align-items:center;justify-content:space-between;padding:5px 0;border:none!important;text-align:right}
+  .rt tbody tr td[data-label]:not([data-label=""])::before{content:attr(data-label);font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;text-align:left;flex-shrink:0;margin-right:8px}
+  .rt tbody tr td[data-label=""]{justify-content:center}
+  .rt tbody tr td[colspan]{display:block}
   /* WL 单列 */
   #page-wl .full>div{grid-template-columns:1fr}
 
@@ -315,6 +324,9 @@ textarea{resize:vertical;font-family:'SF Mono',Consolas,monospace;font-size:11px
   .wlc-sltp,.ptc-sltp{grid-area:sltp}
   .wlc-actions,.ptc-actions{grid-area:actions;flex-direction:row!important;min-width:0!important;width:100%}
   .wlc-actions>*,.ptc-actions>*{flex:1}
+  /* T/Y原来挤在同一个格子里，导致其他按钮(含✕)看起来比T/Y宽很多——
+     把这层包装用display:contents"拆掉"，T/Y各自变成独立格子，6个按钮平分宽度 */
+  .wlc-actions>div,.ptc-actions>div{display:contents}
   .ptc-mv{grid-area:mv}
   /* 专业仪表盘：4列在手机上挤成一团看不清，改2列 */
   #dashboard-cards{grid-template-columns:1fr 1fr!important}
@@ -3223,7 +3235,7 @@ function renderRes(){
         <div class="mbar"><div class="mbaro"><div class="mbari" style="width:${mabs*100}%;background:${mc}"></div></div><span style="font-size:10px;color:var(--muted);margin-left:4px">动能 ${(r.mom??0).toFixed(1)}</span></div>
         <div style="display:flex;gap:6px">
           <button class="abtn" onclick="oneRisk('${r.sym}',${r.price??0},${r.atr??0});calcRisk()">🛡 风控</button>
-          <button class="abtn" onclick="window.open('https://finance.yahoo.com/chart/${r.sym}','_blank')">📈</button>
+          <button class="abtn" onclick="window.open('https://www.tradingview.com/chart/?symbol=${r.sym}','_blank')">📈</button>
           <button class="abtn" onclick="quickWL('${r.sym}');this.style.color='var(--amber)'" >⭐</button>
         </div>
       </div>`;
@@ -3625,26 +3637,26 @@ function renderRisk(){
     const rps=parseFloat(r.rps)||0;
     const op=checked?'1':'.35';
     return '<tr style="opacity:'+op+';transition:opacity .15s">'
-      +'<td style="text-align:center;padding:10px 8px">'
+      +'<td data-label="" style="text-align:center;padding:10px 8px">'
       +'<input type="checkbox" '+(checked?'checked':'')
       +' onchange="toggleRiskItem('+i+',this.checked)"'
       +' style="width:15px;height:15px;cursor:pointer;accent-color:var(--cyan)"></td>'
-      +'<td><div style="font-weight:800;font-size:13px;color:var(--txt)">'+r.sym+'</div>'
+      +'<td data-label="代码"><div style="font-weight:800;font-size:13px;color:var(--txt)">'+r.sym+'</div>'
       +'<div style="font-size:9px;color:var(--muted);margin-top:2px">'+(r.slBasis||'ATR×1.5')+'</div></td>'
-      +'<td style="font-weight:700;color:var(--txt)">$'+ep.toFixed(2)+'</td>'
-      +'<td><div style="color:var(--red);font-weight:700">$'+sl.toFixed(2)+'</div>'
+      +'<td data-label="入场价" style="font-weight:700;color:var(--txt)">$'+ep.toFixed(2)+'</td>'
+      +'<td data-label="止损价"><div style="color:var(--red);font-weight:700">$'+sl.toFixed(2)+'</div>'
       +'<div style="font-size:9px;color:var(--muted)">-'+slPct+'%</div></td>'
-      +'<td><div style="color:var(--green);font-weight:700">$'+tpv.toFixed(2)+'</div>'
+      +'<td data-label="止盈价"><div style="color:var(--green);font-weight:700">$'+tpv.toFixed(2)+'</div>'
       +'<div style="font-size:9px;color:var(--muted)">+'+tpPct+'%</div></td>'
-      +'<td style="color:var(--amber);font-weight:700">$'+rps.toFixed(2)+'</td>'
-      +'<td style="font-weight:800;font-size:14px;color:var(--cyan)">'+(checked?r.shares||0:'—')
+      +'<td data-label="每股风险" style="color:var(--amber);font-weight:700">$'+rps.toFixed(2)+'</td>'
+      +'<td data-label="建议股数" style="font-weight:800;font-size:14px;color:var(--cyan)">'+(checked?r.shares||0:'—')
       +'<span style="font-size:9px;color:var(--muted);font-weight:400"> '+(checked?'股':'')+'</span></td>'
-      +'<td><div style="font-weight:700">'+(checked?'$'+(r.alloc||0).toFixed(0):'—')+'</div>'
+      +'<td data-label="占用资金"><div style="font-weight:700">'+(checked?'$'+(r.alloc||0).toFixed(0):'—')+'</div>'
       +'<div style="font-size:9px;color:var(--muted)">'+(checked?(r.allocPct||0).toFixed(1)+'% 账户':'')+'</div></td>'
-      +'<td style="color:var(--red);font-weight:700">'+(checked?'$'+(r.totalR||0).toFixed(0):'—')+'</td>'
-      +'<td style="color:'+sc+';font-weight:700">'+(checked?rPctNum.toFixed(2)+'%':'—')+'</td>'
-      +'<td><span style="color:'+sc+';font-weight:700;font-size:11px;background:'+sbg+';padding:2px 8px;border-radius:5px">'+stxt+'</span></td>'
-      +'<td style="text-align:center"><button class="abtn" onclick="removeRisk('+i+')" style="color:var(--red)" title="永久移除">✕</button></td>'
+      +'<td data-label="预期风险" style="color:var(--red);font-weight:700">'+(checked?'$'+(r.totalR||0).toFixed(0):'—')+'</td>'
+      +'<td data-label="风险/账户" style="color:'+sc+';font-weight:700">'+(checked?rPctNum.toFixed(2)+'%':'—')+'</td>'
+      +'<td data-label="状态"><span style="color:'+sc+';font-weight:700;font-size:11px;background:'+sbg+';padding:2px 8px;border-radius:5px">'+stxt+'</span></td>'
+      +'<td data-label="" style="text-align:center"><button class="abtn" onclick="removeRisk('+i+')" style="color:var(--red)" title="永久移除">✕</button></td>'
       +'</tr>';
   }).join('');
   document.getElementById('rtbody').innerHTML=rows;
