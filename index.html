@@ -256,7 +256,8 @@ textarea{resize:vertical;font-family:'SF Mono',Consolas,monospace;font-size:11px
   .fbar{gap:4px;padding:6px 0}
   .fb{padding:4px 9px;font-size:11px}
   /* Risk table 横向滚动 */
-  #page-risk .card{overflow-x:auto}
+  /* 风控表格的横向滚动由专门的wrapper div负责（见下方.rt相关），这里不再重复设置，
+     避免"滚动套滚动"导致手机上横向滑动不跟手 */
   /* 风控页头部：标题+说明文字 原来是一行flex，手机上说明文字被挤到几乎没有宽度，
      一个字一行地纵向堆叠——改成整体纵向排列，说明文字给足宽度正常换行 */
   #page-risk .full>div:first-child{flex-direction:column;align-items:stretch!important;gap:8px!important}
@@ -1152,7 +1153,7 @@ CRWD PLTR MSTR COIN SMCI IONQ RKLB LUNR</textarea>
 
   <!-- ── 风控列表 ── -->
   <div class="card" style="flex:1;min-height:0;padding:0;display:flex;flex-direction:column">
-    <div style="overflow-x:auto">
+    <div style="overflow-x:auto;width:100%;-webkit-overflow-scrolling:touch">
       <table class="rt" style="min-width:900px">
         <thead>
           <tr>
@@ -3242,10 +3243,10 @@ function renderRes(){
         <button class="abtn" id="btn-risk-${r.sym}" onclick="oneRisk('${r.sym}',${r.price??0},${r.atr??0});calcRisk();this.style.background='var(--rdim)';this.style.color='var(--red)';this.style.borderColor='var(--rmid)'" title="送入风控" style="color:var(--red)">🛡</button>
         <button class="abtn" onclick="showAlertDialog('${r.sym}',${r.price??0})" title="设置价格提醒">🔔</button>
         <div style="display:flex;flex-direction:column;gap:2px">
-          <a href="https://finance.yahoo.com/chart/${r.sym}" target="_blank"
-            style="display:flex;align-items:center;justify-content:center;height:13px;padding:0 6px;border-radius:3px;background:rgba(var(--yahoo-rgb),.2);border:1px solid rgba(var(--yahoo-rgb),.5);text-decoration:none;font-size:9px;font-weight:800;color:var(--yahoo);line-height:1" title="Yahoo Finance">Y</a>
           <a href="https://www.tradingview.com/chart/?symbol=${r.sym}" target="_blank"
             style="display:flex;align-items:center;justify-content:center;height:13px;padding:0 6px;border-radius:3px;background:rgba(var(--tv-rgb),.2);border:1px solid rgba(var(--tv-rgb),.5);text-decoration:none;font-size:9px;font-weight:800;color:var(--tv);line-height:1" title="TradingView">T</a>
+          <a href="https://finance.yahoo.com/chart/${r.sym}" target="_blank"
+            style="display:flex;align-items:center;justify-content:center;height:13px;padding:0 6px;border-radius:3px;background:rgba(var(--yahoo-rgb),.2);border:1px solid rgba(var(--yahoo-rgb),.5);text-decoration:none;font-size:9px;font-weight:800;color:var(--yahoo);line-height:1" title="Yahoo Finance">Y</a>
         </div>
         <button class="abtn" id="btn-wl-${r.sym}" onclick="quickWL('${r.sym}');this.style.color='var(--amber)';this.style.background='var(--adim)';this.style.borderColor='var(--amid)'" title="加入自选股（点击后亮灯）">⭐</button>
       </div>`;
@@ -3867,10 +3868,10 @@ function renderWL(){
       <div class="wlc-actions" style="display:flex;flex-direction:column;gap:2px;align-items:stretch;min-width:64px">
         <button class="abtn" onclick="showAlertDialog('${w.sym}',0)" title="价格提醒" style="color:var(--red);justify-content:center">🔔</button>
         <div style="display:flex;gap:2px">
-          <a href="https://finance.yahoo.com/chart/${w.sym}" target="_blank"
-            class="abtn" style="flex:1;text-decoration:none;background:rgba(var(--yahoo-rgb),.25);color:var(--yahoo);border-color:rgba(var(--yahoo-rgb),.5);font-weight:800;justify-content:center" title="Yahoo Finance">Y</a>
           <a href="https://www.tradingview.com/chart/?symbol=${w.sym}" target="_blank"
             class="abtn" style="flex:1;text-decoration:none;background:rgba(var(--tv-rgb),.25);color:var(--tv);border-color:rgba(var(--tv-rgb),.5);font-weight:800;justify-content:center" title="TradingView">T</a>
+          <a href="https://finance.yahoo.com/chart/${w.sym}" target="_blank"
+            class="abtn" style="flex:1;text-decoration:none;background:rgba(var(--yahoo-rgb),.25);color:var(--yahoo);border-color:rgba(var(--yahoo-rgb),.5);font-weight:800;justify-content:center" title="Yahoo Finance">Y</a>
         </div>
         <button class="abtn" id="wlrecalc${i}" onclick="wlAutoCalcSL(${i})" title="自动算止损/目标" style="color:var(--amber);justify-content:center">⚡</button>
         <button class="abtn" onclick="wlDeleteConfirm(${i})" title="删除" style="color:var(--red);justify-content:center">✕</button>
@@ -4125,10 +4126,10 @@ function renderPT(force=false){
       <div class="ptc-actions" style="display:flex;flex-direction:column;gap:2px;align-items:stretch;min-width:64px">
         <button class="abtn" onclick="ptScanOne(${i})" title="扫描信号" style="color:var(--cyan);justify-content:center">📡</button>
         <div style="display:flex;gap:2px">
-          <a href="https://finance.yahoo.com/chart/${p.sym}" target="_blank"
-            class="abtn" style="flex:1;text-decoration:none;background:rgba(var(--yahoo-rgb),.25);color:var(--yahoo);border-color:rgba(var(--yahoo-rgb),.5);font-weight:800;justify-content:center" title="Yahoo Finance">Y</a>
           <a href="https://www.tradingview.com/chart/?symbol=${p.sym}" target="_blank"
             class="abtn" style="flex:1;text-decoration:none;background:rgba(var(--tv-rgb),.25);color:var(--tv);border-color:rgba(var(--tv-rgb),.5);font-weight:800;justify-content:center" title="TradingView">T</a>
+          <a href="https://finance.yahoo.com/chart/${p.sym}" target="_blank"
+            class="abtn" style="flex:1;text-decoration:none;background:rgba(var(--yahoo-rgb),.25);color:var(--yahoo);border-color:rgba(var(--yahoo-rgb),.5);font-weight:800;justify-content:center" title="Yahoo Finance">Y</a>
         </div>
         <button class="abtn" id="ptrecalc${i}" onclick="recalcSL(${i})" title="自动算止损/目标" style="color:var(--amber);justify-content:center">⚡</button>
         <button class="abtn" onclick="ptSellDialog(${i})" title="卖出（支持部分卖出/清仓）" style="color:var(--green);justify-content:center">💰</button>
