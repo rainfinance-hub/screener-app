@@ -365,10 +365,15 @@ textarea{resize:vertical;font-family:'SF Mono',Consolas,monospace;font-size:11px
 @media(max-width:767px){
   .m-card-header,.m-card-sigs,.m-card-footer{display:flex}
   .m-card-sigs{display:grid}
-  /* 隐藏桌面表格的子 div（第2个起是桌面列） */
-  .trow>.tsym,.trow>div:not(.m-card-header):not(.m-card-sigs):not(.m-card-footer){
+  /* 隐藏桌面表格的子 div（第2个起是桌面列），但保留操作按钮那一列——
+     用户更喜欢大按钮堆叠这种手机也能看清楚的样式，紧凑的小图标行反而藏起来 */
+  .trow>.tsym,.trow>div:not(.m-card-header):not(.m-card-sigs):not(.m-card-footer):not(.desktop-actions-col){
     display:none!important
   }
+  .trow>.desktop-actions-col{display:flex!important;flex-direction:column!important;gap:6px;margin-top:8px;width:100%}
+  .trow>.desktop-actions-col>*{width:100%}
+  .trow>.desktop-actions-col .abtn{padding:10px;font-size:13px}
+  .m-card-footer-btns{display:none!important}
   /* 但 m-card-* 要显示 */
   .trow>.m-card-header,.trow>.m-card-sigs,.trow>.m-card-footer{display:flex!important}
   .trow>.m-card-sigs{display:grid!important}
@@ -692,15 +697,15 @@ input:focus,select:focus{outline:none;border-color:var(--cyan)!important;box-sha
       <textarea id="custom-pool" style="height:72px" oninput="updateCount()">AAPL MSFT NVDA TSLA AMZN GOOGL META AVGO AMD NFLX
 CRWD PLTR MSTR COIN SMCI IONQ RKLB LUNR</textarea>
 
-      <div class="slabel"><span class="plive" style="margin-right:4px"></span>实时成分股</div>
+      <div class="slabel"><span class="plive" style="margin-right:4px"></span>实时成分股 <button class="default-badge" id="db-live" onclick="setCategoryDefault('live')" title="开关式：一键全部加入实时成分股7类；已全开时再点=全部移出">● 默认</button></div>
       <div class="chips">
-        <button class="chip" onclick="toggleLive(this,'qqq')">QQQ 纳指</button>
-        <button class="chip" onclick="toggleLive(this,'sp500a')">S&amp;P 1-100</button>
-        <button class="chip" onclick="toggleLive(this,'sp500b')">S&amp;P 101-250</button>
-        <button class="chip" onclick="toggleLive(this,'sp500c')">S&amp;P 251-500</button>
-        <button class="chip" onclick="toggleLive(this,'spmo')">SPMO 动量</button>
-        <button class="chip" onclick="toggleLive(this,'smh')">SMH 半导体</button>
-        <button class="chip" onclick="toggleLive(this,'soxx')">SOXX 费城半导</button>
+        <button class="chip on" id="chip-live-qqq" onclick="toggleLive(this,'qqq')">QQQ 纳指</button>
+        <button class="chip on" id="chip-live-sp500a" onclick="toggleLive(this,'sp500a')">S&amp;P 1-100</button>
+        <button class="chip on" id="chip-live-sp500b" onclick="toggleLive(this,'sp500b')">S&amp;P 101-250</button>
+        <button class="chip on" id="chip-live-sp500c" onclick="toggleLive(this,'sp500c')">S&amp;P 251-500</button>
+        <button class="chip on" id="chip-live-spmo" onclick="toggleLive(this,'spmo')">SPMO 动量</button>
+        <button class="chip on" id="chip-live-smh" onclick="toggleLive(this,'smh')">SMH 半导体</button>
+        <button class="chip on" id="chip-live-soxx" onclick="toggleLive(this,'soxx')">SOXX 费城半导</button>
       </div>
 
       <div class="slabel">🏆 个股池 <button class="default-badge" id="db-stock" onclick="setCategoryDefault('stock')" title="开关式：一键全部加入个股池9个主题；已全开时再点=全部移出">● 默认</button></div>
@@ -1637,7 +1642,7 @@ let results=[],riskItems=[],scanStop=false,scanning=false;
 let activeFilter='all',remOn=false,remTick=null;
 let watchlist=JSON.parse(localStorage.getItem('wl')||'[]');
 let portfolio=JSON.parse(localStorage.getItem('pt')||'[]');
-let activeLive=new Set(['qqq']),activePoolKeys=new Set();
+let activeLive=new Set(['qqq','sp500a','sp500b','sp500c','spmo','smh','soxx']),activePoolKeys=new Set();
 let logCol=false;
 let currentDS='alpaca';
 
@@ -2377,6 +2382,7 @@ const LIVE={qqq:'MSFT AAPL NVDA AMZN META TSLA GOOGL AVGO COST NFLX TMUS AMD CSC
   sp500c:'JBHT CNP AMD PDBC CVS SEE NKE CTVA JNJ GM UAL LMT GEHC CRWD BIIB NET NTAP SO CSX PCAR PG BKNG CDNS MA NI AMCR ES CUBE ELV CPRT AIZ SBUX DIS ETN APH EBAY DPZ IAC CPT AXP DLR NOW FISV NVR GILD ZION SNA LRCX GIS LKQ APP TRMB MU NNN CL PRGO POOL NOV CBOE CHWY KEYS CTAS GPN EG AFRM AKAM NDSN PODD REGN PCG PINS CEG HLT ENPH MTB LHX PFE JKHY WFC MO SLB MPWR MAS CHRW RCL ALB BNTX ANGI FMC MCO FSLR PTC ORCL AME RLI EXR RVLV HPE NVDA MKC PAYC AMZN ITW TPR HCA HSY STX AES FOX UNH EL GOOG T COR COP FCX WMT MMC TAP RL AAPL AFG CCI BLK GL BA DLTR ED MOS RSG HD BKR EME MHK XYZ MCHP IPG DTE SNAP ETSY WHR HAL WDC WBA SYY QSR DXCM KMI HPQ VICI CARR HRL MAR EQIX ZTS PFG FG WYNN CF HWM HIG AEP OMC NDAQ ZG XPO KO ISRG DAL BMY DOC OTIS ANET MTD TXN RTX PKG FTNT PWR STT META MANH ONTO ENTG WOLF ACLS COHR FORM OSIS AMBA AXTI CRUS SLAB RMBS MTZ PRIM TTEK STRL KBR AECOM MYRG SITE ROAD MTSI AEIS IPGP MKSI UCTT ICHR NVMI CAMT REXR COLD STAG IIPR FR EGP GDOT NRDS SOFI TREE LDI PRG WRLD SLM NMIH CNC ACAD LIVN GKOS ITGR NVST PDCO SEM VST NRG CLNE RUN',spmo:'NVDA META AAPL MSFT AVGO AMZN GOOGL TSLA LLY PLTR NFLX V MA JPM COST HD UNH ABBV XOM CVX ORCL CRM CSCO AMD ISRG LRCX MU KLAC AMAT PANW CRWD ZS DDOG FTNT SNPS CDNS MELI AXON APP XYZ COIN MSTR CEG VST NEE FSLR GEV PWR HES WDAY',smh:'NVDA TSM AVGO ASML AMD QCOM AMAT TXN LRCX KLAC MU INTC NXPI MCHP MRVL ON SWKS MPWR ADI ENTG ONTO FORM ACLS CRUS WOLF',soxx:'NVDA AVGO TSM ASML QCOM TXN AMD INTC AMAT LRCX KLAC MU NXPI MCHP MRVL ON ADI SWKS MPWR ENTG ONTO ACLS FORM CRUS HIMX DIOD SLAB RMBS WOLF MTSI'};
 // ── 扫描池分类元数据（"● 默认"按钮 + 已选标签展示用）──
 const POOL_CATEGORIES={
+  live: {label:'实时成分股',chipIds:['chip-live-qqq','chip-live-sp500a','chip-live-sp500b','chip-live-sp500c','chip-live-spmo','chip-live-smh','chip-live-soxx']},
   stock:{label:'个股池', chipIds:['chip-mag7','chip-semi','chip-ai','chip-crypto','chip-power','chip-fintech','chip-health','chip-quantum','chip-hot2026']},
   etf:  {label:'ETF池',  chipIds:['chip-etf-core','chip-etf-sector','chip-etf-factor','chip-etf-intl']},
   mix:  {label:'综合大池',chipIds:['chip-sp100','chip-qqq50','chip-hot50']},
@@ -2398,6 +2404,14 @@ function setCategoryDefault(catKey){
       if(wlBtn&&!wlBtn.classList.contains('on'))toggleWLChip(wlBtn);
       if(ptBtn&&!ptBtn.classList.contains('on'))togglePTChip(ptBtn);
     }
+  } else if(catKey==='live'){
+    cat.chipIds.forEach(id=>{
+      const btn=document.getElementById(id);
+      if(!btn)return;
+      const isOn=btn.classList.contains('on');
+      const key=id.replace(/^chip-live-/,'');
+      if(allOn?isOn:!isOn)toggleLive(btn,key);
+    });
   } else {
     cat.chipIds.forEach(id=>{
       const btn=document.getElementById(id);
@@ -2799,19 +2813,19 @@ async function startScan(){
   // 根源修复：fetchAlpaca直接读输入框的值，页面/浏览器重启后这个框会是空的（PIN没重新解锁），
   // 导致Alpaca请求每次都直接报错——"已配置key"的判断和AUTO竞速优先级全部失效，
   // 扫描会静默退化成只用免费源（Yahoo+2代理），限流、慢，Alpaca等于白配置。
-  // 扫描前先尝试用本次会话已有的PIN静默解锁；没有就明确提示，而不是悄悄降级不说明原因。
+  // 扫描前先尝试用本地已保存的PIN静默解锁；没有就明确提示，而不是悄悄降级不说明原因。
   if(localStorage.getItem('has_key')==='1'&&!document.getElementById('api-key').value.trim()){
-    const pin=sessionStorage.getItem('pin');
+    const pin=localStorage.getItem('pin');
     if(pin){
       const k=xorDecode(localStorage.getItem('apk')||'',pin);
       const s=xorDecode(localStorage.getItem('aps')||'',pin);
       if(k&&s){
         document.getElementById('api-key').value=k;
         document.getElementById('api-secret').value=s;
-        log('🔓 扫描前自动解锁Alpaca Key（本次会话已保存的PIN）','info');
+        log('🔓 扫描前自动解锁Alpaca Key（本地已保存的PIN）','info');
       }
     } else {
-      log('🔒 检测到已保存Alpaca Key但本次会话未解锁PIN，本次扫描只能用免费数据源（较慢/易限流）——建议点顶部API状态栏解锁后再扫','warn');
+      log('🔒 检测到已保存Alpaca Key但尚未设置/解锁PIN，本次扫描只能用免费数据源（较慢/易限流）——请点顶部API状态栏输入PIN解锁','warn');
     }
   }
   const syms=getSyms();
@@ -2830,7 +2844,7 @@ async function startScan(){
   // 预估更贴近实际：并发从4调回2、延迟从150ms调宽到250ms后重新校准
   const estSecs=Math.ceil(syms.length/concurrency*0.5);
   // 无条件诊断日志：每次扫描都打一行，明确说清楚key的真实状态，不用再靠猜
-  log(`🔑 Key状态：本地已存=${localStorage.getItem('has_key')==='1'?'是':'否'} · 本次会话已解锁=${hasAlpacaKey?'是':'否'} · session有PIN=${sessionStorage.getItem('pin')?'是':'否'} · 实际数据源=${hasAlpacaKey?'Alpaca优先':'仅免费源(Yahoo+代理)'}`,'info');
+  log(`🔑 Key状态：本地已存=${localStorage.getItem('has_key')==='1'?'是':'否'} · 已解锁=${hasAlpacaKey?'是':'否'} · 本地有PIN=${localStorage.getItem('pin')?'是':'否'} · 实际数据源=${hasAlpacaKey?'Alpaca优先':'仅免费源(Yahoo+代理)'}`,'info');
   log(`⚡ 并行扫描 ${syms.length} 只 · [${currentDS}] · 并发${concurrency} · 预计${estSecs}秒`,'info');
   // 非交易时段提示：周末/盘前盘后扫描时数据是上一交易日收盘，多扫结果不变
   {
@@ -4403,7 +4417,7 @@ function updateAPStatus(){
   const diffH=Math.floor(diffMs/3600000);
   const diffM=Math.floor((diffMs%3600000)/60000);
   const countdownStr=diffH>0?`${diffH}小时${diffM}分后`:`${diffM}分钟后`;
-  const pinWarn=(localStorage.getItem('push_cfg')&&!sessionStorage.getItem('pin'))?' · 🔒推送需解锁PIN':'';
+  const pinWarn=(localStorage.getItem('push_cfg')&&!localStorage.getItem('pin'))?' · 🔒推送需解锁PIN':'';
   el.textContent=`✅ 运行中(${targets.length}个时段) · 下次：${nextLabel} ET（${countdownStr}）${pinWarn}`;
   el.style.color=pinWarn?'var(--amber)':'var(--green)';
   el.style.background=pinWarn?'var(--adim)':'var(--gdim)';
@@ -4472,16 +4486,16 @@ function savePushConfig(){
   const tgChat=document.getElementById('push-tg-chat').value.trim();
   const dcWebhook=document.getElementById('push-dc-webhook').value.trim();
   const hasSecret=tgToken||tgChat||dcWebhook;
-  let pin=sessionStorage.getItem('pin');
+  let pin=localStorage.getItem('pin');
   if(hasSecret&&!pin){
-    pin=prompt('设置PIN码保护推送密钥（Token/Webhook会被加密，本次会话内免重复输入）：');
+    pin=prompt('设置PIN码保护推送密钥（Token/Webhook会被加密，永久保存，以后不用重复输入）：');
     if(!pin){
       log('⚠ 未设置PIN，Token/Webhook这次未保存；开关/推送范围等非敏感设置已正常保存','warn');
       document.getElementById('push-status').textContent='⚠ 仅保存了非敏感设置';
       document.getElementById('push-status').className='';
       return;
     }
-    sessionStorage.setItem('pin',pin);
+    localStorage.setItem('pin',pin);
   }
   if(hasSecret){
     localStorage.setItem('push_cfg', xorEncode(JSON.stringify({tgToken,tgChat,dcWebhook}), pin));
@@ -4494,7 +4508,7 @@ function savePushConfig(){
 function loadPushConfig(){
   const enc=localStorage.getItem('push_cfg');
   if(!enc)return null;
-  const pin=sessionStorage.getItem('pin');
+  const pin=localStorage.getItem('pin');
   if(!pin)return null;
   try{
     const secretCfg=JSON.parse(xorDecode(enc,pin));
@@ -4611,11 +4625,11 @@ async function autoPushResults(){
   const hasSavedCfg=!!localStorage.getItem('push_cfg');
   const cfg=loadPushConfig();
   if(!cfg){
-    // 关键诊断：区分"从没配置过推送" vs "配置了但本次会话还没解锁PIN"
-    // 后者是最容易被忽略的静默失败——PIN只存在sessionStorage，浏览器/标签页一重启就没了，
+    // 关键诊断：区分"从没配置过推送" vs "配置了但本地还没有PIN（比如刚点过清除）"
+    // 后者是最容易被忽略的静默失败——PIN只存在localStorage，浏览器/标签页一重启就没了，
     // 之后所有自动推送都会在这里无声无息地退出，之前完全没有任何日志提示
-    if(hasSavedCfg&&!sessionStorage.getItem('pin')){
-      log('🔒 推送配置已保存但本次会话未解锁PIN，自动推送无法执行——请重新打开API Key栏输入PIN解锁一次','warn');
+    if(hasSavedCfg&&!localStorage.getItem('pin')){
+      log('🔒 推送配置已保存但本地没有PIN，自动推送无法执行——请重新打开API Key栏输入PIN解锁一次','warn');
     }
     return;
   }
@@ -4777,7 +4791,7 @@ function saveAPI(){
   localStorage.setItem('apk',xorEncode(k,pin));
   localStorage.setItem('aps',xorEncode(s,pin));
   localStorage.setItem('has_key','1');
-  sessionStorage.setItem('pin',pin); // PIN 只存当次会话，关掉浏览器自动清除
+  localStorage.setItem('pin',pin); // PIN 永久保存在本地，除非手动点"清除"，不会因为关闭浏览器/切换App而丢失
   document.getElementById('api-txt').textContent='🔒 已加密保存';
   document.getElementById('api-txt').style.color='var(--green)';
   log('✅ API Key 已加密保存（PIN保护）','ok');
@@ -4785,7 +4799,7 @@ function saveAPI(){
 }
 function clearAPI(){
   localStorage.removeItem('apk');localStorage.removeItem('aps');localStorage.removeItem('has_key');
-  sessionStorage.removeItem('pin');
+  localStorage.removeItem('pin');
   document.getElementById('api-key').value='';
   document.getElementById('api-secret').value='';
   document.getElementById('api-txt').textContent='已清除';
@@ -4794,8 +4808,8 @@ function clearAPI(){
 }
 function loadAPIWithPIN(){
   if(!localStorage.getItem('has_key'))return;
-  // 先尝试用 sessionStorage 里的 PIN（同一浏览器会话不用重新输）
-  let pin=sessionStorage.getItem('pin');
+  // 先尝试用 localStorage 里已保存的 PIN（永久保存，不用重新输）
+  let pin=localStorage.getItem('pin');
   if(!pin){
     pin=prompt('请输入 PIN 码解锁 API Key：');
     if(!pin)return;
@@ -4805,12 +4819,12 @@ function loadAPIWithPIN(){
   if(!k||!s){
     document.getElementById('api-txt').textContent='❌ PIN 错误';
     document.getElementById('api-txt').style.color='var(--red)';
-    sessionStorage.removeItem('pin');
+    localStorage.removeItem('pin');
     return;
   }
   document.getElementById('api-key').value=k;
   document.getElementById('api-secret').value=s;
-  sessionStorage.setItem('pin',pin);
+  localStorage.setItem('pin',pin);
   document.getElementById('api-txt').textContent='🔓 已解锁';
   document.getElementById('api-txt').style.color='var(--green)';
   log('🔓 API Key 已解锁','ok');
@@ -5884,8 +5898,8 @@ function go(id){document.querySelectorAll('.tab').forEach(t=>t.classList.remove(
     document.getElementById('api-txt').style.color='var(--amber)';
     document.getElementById('api-txt').style.cursor='pointer';
     document.getElementById('api-txt').onclick=()=>loadAPIWithPIN();
-    // 如果同一会话已有 PIN，自动解锁
-    if(sessionStorage.getItem('pin')) loadAPIWithPIN();
+    // 如果本地已保存 PIN，自动解锁
+    if(localStorage.getItem('pin')) loadAPIWithPIN();
   }
   document.getElementById('wl-cnt').textContent=watchlist.length;
   document.getElementById('pt-cnt').textContent=new Set(portfolio.map(p=>p.sym)).size;
