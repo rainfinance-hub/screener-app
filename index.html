@@ -24,7 +24,7 @@
   --shadow:0 2px 12px rgba(0,0,0,.4);--hairline:rgba(255,255,255,.04);--hairline2:rgba(255,255,255,.02);
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{min-height:100%}
+html,body{min-height:100%;overscroll-behavior-x:none}
 body{background:var(--bg);color:var(--txt);font-family:'Inter',-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;font-size:13px;display:flex;flex-direction:column;padding-bottom:170px}
 
 /* NAV */
@@ -1171,7 +1171,7 @@ CRWD PLTR MSTR COIN SMCI IONQ RKLB LUNR</textarea>
   <!-- ── 风控列表 ── -->
   <div class="card" style="flex:1;min-height:0;padding:0;display:flex;flex-direction:column">
     <div id="risk-scroll-hint" style="font-size:10px;color:var(--muted);text-align:center;padding:4px;border-bottom:1px solid var(--b2);background:var(--dim)">⟷ 表格较宽，可左右滑动/滚动查看"占用资金・预期风险・状态・操作"等列</div>
-    <div id="risk-table-scroll" style="overflow-x:auto;width:100%;-webkit-overflow-scrolling:touch">
+    <div id="risk-table-scroll" style="overflow-x:auto;width:100%;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain">
       <table class="rt" style="min-width:900px">
         <thead>
           <tr>
@@ -1541,26 +1541,47 @@ CRWD PLTR MSTR COIN SMCI IONQ RKLB LUNR</textarea>
         <div style="font-size:11px;font-weight:700;color:var(--txt);margin-bottom:6px">📌 止损模式说明</div>
         <div style="font-size:11px;color:var(--muted);line-height:1.8">
           <div><b style="color:var(--txt)">摆动低点止损</b> — 最近5根K线最低价×0.995，最贴近市场结构，适合波段交易</div>
-          <div><b style="color:var(--txt)">维加斯隧道下轨</b> — EMA169×0.99，趋势交易首选，止损空间较大</div>
-          <div><b style="color:var(--green)">ATR×1.5止损 ★推荐</b> — 14日平均波幅×1.5，数学最优，适合大多数股票</div>
-          <div><b style="color:var(--txt)">ATR×2.0止损</b> — 止损更宽松，给股票更多波动空间</div>
+          <div><b style="color:var(--green)">ATR×1.5止损 ★推荐</b> — 7日平均波幅×1.5，数学最优，适合大多数股票</div>
           <div><b style="color:var(--txt)">固定3%止损</b> — 简单直接，适合低波动蓝筹股</div>
           <div><b style="color:var(--txt)">固定5%止损</b> — 适合高波动成长股</div>
+          <div style="color:var(--amber);margin-top:4px">⚠ 不管哪种模式，止损离锚点最多不超过15%（防止个别股票算出离谱的止损位）</div>
         </div>
       </div>
       <div>
         <div style="font-size:11px;font-weight:700;color:var(--txt);margin-bottom:6px">📌 其他参数说明</div>
         <div style="font-size:11px;color:var(--muted);line-height:1.8">
-          <div><b style="color:var(--txt)">止盈目标 1.5R/2R/3R</b> — 风险回报比。2R=赚的是亏的2倍，长期胜率只需>33%就能盈利</div>
+          <div><b style="color:var(--txt)">止盈目标 1R/2R/3R</b> — 风险回报比，分批止盈。1R先卖30%锁利，2R再卖30%，3R之后剩余仓位转移动止损，不再设死目标</div>
           <div><b style="color:var(--txt)">单笔最大风险%</b> — 建议1-2%，每笔亏损不超过账户的1-2%</div>
           <div><b style="color:var(--txt)">单股资金上限%</b> — 建议≤25%，防止单一股票过度集中</div>
           <div><b style="color:var(--txt)">行业集中度上限%</b> — 同一板块总仓位上限，防止行业集中风险，建议≤30%</div>
-          <div><b style="color:var(--txt)">ATR周期</b> — 默认14日，数字越小越敏感，越大越平滑</div>
+          <div><b style="color:var(--txt)">ATR周期</b> — 默认7日，数字越小越敏感，越大越平滑</div>
         </div>
       </div>
     </div>
     <div style="padding:8px 12px;background:var(--gdim);border-radius:var(--r);border-left:3px solid var(--green);font-size:11px;color:var(--muted)">
       💡 <b style="color:var(--txt)">黄金公式：</b>建议股数 = (账户×单笔风险%) ÷ 每股风险 · 所有状态显示「✓ 正常」才是安全仓位
+    </div>
+  </div>
+
+  <!-- 自选股 vs 持仓股：止损止盈锚点说明 -->
+  <div class="card" style="background:var(--pdim);border-color:rgba(var(--purple-rgb),.25);margin-bottom:8px">
+    <div class="ctitle" style="color:var(--purple)">📦 自选股 vs 持仓股：止损止盈的锚点不一样</div>
+    <div style="font-size:12px;color:var(--muted);line-height:1.85;margin-bottom:8px">
+      两边用的是同一套ATR公式，但计算的<b style="color:var(--txt)">锚点（基准价）不同</b>，这是最容易搞混的地方：
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div style="padding:8px 10px;background:var(--dim);border-radius:var(--r)">
+        <div style="font-size:11px;font-weight:700;color:var(--amber);margin-bottom:4px">⭐ 自选股（还没买）</div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.7">锚点 = <b style="color:var(--txt)">现价</b>。没有成本概念，止损止盈只能以现在这个价位为基准。只能靠「⚡自动算」重新生成，<b style="color:var(--txt)">没有手动编辑入口</b>。</div>
+      </div>
+      <div style="padding:8px 10px;background:var(--dim);border-radius:var(--r)">
+        <div style="font-size:11px;font-weight:700;color:var(--green);margin-bottom:4px">📦 持仓股（已经买了）</div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.7">锚点 = <b style="color:var(--txt)">实际成本价</b>，不是现价。止损代表"从入场那一刻起愿意承担多大风险"，不会因为现价涨跌就跟着变。</div>
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--muted);line-height:1.85">
+      <div style="margin-bottom:4px">🔒 <b style="color:var(--txt)">只收紧、不放松</b>——持仓股每次点「⚡自动算」重新计算，新算出的止损只有比现在设置的更保守（更高）才会真正更新，防止"浮亏后重算=悄悄放宽止损"。</div>
+      <div>✎ <b style="color:var(--txt)">手动编辑不受此限制</b>——点持仓股每一行的✎编辑按钮，可以直接手动填任意止损/目标价，不受"只收紧"规则约束，留给你自己判断的空间。</div>
     </div>
   </div>
 
