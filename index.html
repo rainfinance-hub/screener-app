@@ -169,6 +169,10 @@ textarea{resize:vertical;font-family:'SF Mono',Consolas,monospace;font-size:11px
 
 /* RISK */
 .rt{width:100%;border-collapse:collapse}
+#risk-table-scroll{scrollbar-width:auto}
+#risk-table-scroll::-webkit-scrollbar{height:10px}
+#risk-table-scroll::-webkit-scrollbar-thumb{background:var(--b3);border-radius:5px}
+#risk-table-scroll::-webkit-scrollbar-track{background:var(--dim)}
 .rt th{text-align:left;padding:7px 10px;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--b)}
 .rt td{padding:8px 10px;font-size:12px;border-bottom:1px solid var(--b)}
 .rt tr:hover td{background:var(--card2)}
@@ -275,6 +279,7 @@ textarea{resize:vertical;font-family:'SF Mono',Consolas,monospace;font-size:11px
   .rt tbody tr td[data-label]:not([data-label=""])::before{content:attr(data-label);font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;text-align:left;flex-shrink:0;margin-right:8px}
   .rt tbody tr td[data-label=""]{justify-content:center}
   .rt tbody tr td[colspan]{display:block}
+  #risk-scroll-hint{display:none}
   /* WL 单列 */
   #page-wl .full>div{grid-template-columns:1fr}
 
@@ -1165,7 +1170,8 @@ CRWD PLTR MSTR COIN SMCI IONQ RKLB LUNR</textarea>
 
   <!-- ── 风控列表 ── -->
   <div class="card" style="flex:1;min-height:0;padding:0;display:flex;flex-direction:column">
-    <div style="overflow-x:auto;width:100%;-webkit-overflow-scrolling:touch">
+    <div id="risk-scroll-hint" style="font-size:10px;color:var(--muted);text-align:center;padding:4px;border-bottom:1px solid var(--b2);background:var(--dim)">⟷ 表格较宽，可左右滑动/滚动查看"占用资金・预期风险・状态・操作"等列</div>
+    <div id="risk-table-scroll" style="overflow-x:auto;width:100%;-webkit-overflow-scrolling:touch">
       <table class="rt" style="min-width:900px">
         <thead>
           <tr>
